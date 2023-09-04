@@ -1,5 +1,9 @@
-import type {GcpRegion} from '../pricing/gcp-regions';
-import {pricing} from '../pricing/price-per-1-s';
+import type {GcpRegion, Tier} from '../pricing/gcp-regions';
+import {
+	GCP_TIER_1_REGIONS,
+	GCP_TIER_2_REGIONS,
+	pricing,
+} from '../pricing/gcp-regions';
 import {validateGcpRegion} from '../shared/validate-gcp-region';
 
 export type EstimatePriceInput = {
@@ -20,9 +24,9 @@ export const estimatePrice = ({
 	memoryInGiB,
 	vCpusAllocated,
 }: EstimatePriceInput): number => {
-	validateMemorySize(memoryInGiB);
+	// validateMemorySize(memoryInGiB);
 	validateGcpRegion(region);
-	validateDiskSizeInMb(diskSizeInMb);
+	// validateDiskSizeInMb(diskSizeInMb);
 	if (typeof durationInMilliseconds !== 'number') {
 		throw new TypeError(
 			`Parameter 'durationInMilliseconds' must be a number but got ${typeof durationInMilliseconds}`
@@ -47,29 +51,25 @@ export const estimatePrice = ({
 		);
 	}
 
-	const durationPrice = pricing[region]['Lambda Duration-ARM'].price;
+	let tier: Tier;
+
+	if (GCP_TIER_1_REGIONS.includes(region as any)) {
+		tier = 'Tier_1';
+	} else if (GCP_TIER_2_REGIONS.includes(region as any)) {
+		tier = 'Tier_2';
+	} else {
+		throw new TypeError(
+			`Parameter 'region' must be a valid GCP region from Tier 1 or Tier 2, but it is ${region}.`
+		);
+	}
+
+	const vCpuPrice = pricing[tier].VCPU_SECOND;
+	const memoryPrice = pricing[tier].GIB_SECOND;
 
 	// In GB-second
-	const timeCostDollars =
-		Number(durationPrice) *
-		((memorySizeInMb * durationInMilliseconds) / 1000 / 1024);
+	const vCpuCost = (durationInMilliseconds / 1000) * vCpusAllocated * vCpuPrice;
+	const memoryCost =
+		(durationInMilliseconds / 1000) * memoryInGiB * memoryPrice;
 
-	const diskSizePrice = pricing[region]['Lambda Storage-Duration-ARM'].price;
-
-	const chargedDiskSize = Math.max(
-		0,
-		diskSizeInMb - MIN_EPHEMERAL_STORAGE_IN_MB
-	);
-	// In GB-second
-	const diskSizeDollars =
-		chargedDiskSize *
-		Number(diskSizePrice) *
-		(durationInMilliseconds / 1000 / 1024);
-
-	const invocationCost =
-		Number(pricing[region]['Lambda Requests'].price) * lambdasInvoked;
-
-	return Number(
-		(timeCostDollars + diskSizeDollars + invocationCost).toFixed(5)
-	);
+	return Number((vCpuCost + memoryCost).toFixed(5));
 };

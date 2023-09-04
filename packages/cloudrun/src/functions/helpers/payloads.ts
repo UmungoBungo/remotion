@@ -90,6 +90,7 @@ const renderStillOnCloudrunResponsePayload = z.object({
 	bucketName: z.string(),
 	renderId: z.string(),
 	privacy: z.enum(['public-read', 'project-private']),
+	estimatedPrice: z.number().or(z.string()),
 });
 
 const renderMediaOnCloudrunResponsePayload = z.object({

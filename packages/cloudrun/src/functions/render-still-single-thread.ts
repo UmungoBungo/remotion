@@ -3,6 +3,9 @@ import {Storage} from '@google-cloud/storage';
 import type {ChromiumOptions} from '@remotion/renderer';
 import {RenderInternals} from '@remotion/renderer';
 import {Internals} from 'remotion';
+import {estimatePrice} from '../api/estimate-price';
+import {extractCpuFromURL} from '../api/helpers/extract-cpu-from-url';
+import {extractMemoryInGiFromURL} from '../api/helpers/extract-mem-from-url';
 import {Log} from '../cli/log';
 import {randomHash} from '../shared/random-hash';
 import {getCompositionFromBody} from './helpers/get-composition-from-body';
@@ -19,6 +22,8 @@ export const renderStillSingleThread = async (
 	if (body.type !== 'still') {
 		throw new Error('expected type still');
 	}
+
+	const start = Date.now();
 
 	const renderId = randomHash({randomInTests: true});
 
@@ -88,6 +93,24 @@ export const renderStillSingleThread = async (
 
 		const uploadedFile = uploadedResponse[0];
 		const renderMetadata = await uploadedFile.getMetadata();
+
+		const serviceName = process.env.K_SERVICE;
+
+		let estimatedPrice: number | string = 'unable to estimate price';
+
+		if (serviceName) {
+			const memoryInGiB = extractMemoryInGiFromURL(serviceName);
+			const vCpusAllocated = extractCpuFromURL(serviceName);
+			if (memoryInGiB) {
+				estimatedPrice = estimatePrice({
+					durationInMilliseconds: Date.now() - start + 100,
+					memoryInGiB,
+					vCpusAllocated,
+					region: getCurrentRegionInFunction(),
+				});
+			}
+		}
+
 		const responseData: RenderStillOnCloudrunOutput = {
 			publicUrl: uploadedFile.publicUrl(),
 			cloudStorageUri: uploadedFile.cloudStorageURI.href,
@@ -96,6 +119,7 @@ export const renderStillSingleThread = async (
 			renderId,
 			type: 'success',
 			privacy: publicUpload ? 'public-read' : 'project-private',
+			estimatedPrice,
 		};
 
 		RenderInternals.Log.info('Render Completed:', responseData);

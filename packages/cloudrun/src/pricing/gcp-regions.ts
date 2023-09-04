@@ -46,15 +46,28 @@ export const GCP_REGIONS = [
 	...GCP_TIER_2_REGIONS,
 ] as const;
 
-// Keep pricing up to date from here - https://cloud.google.com/run/pricing
-export const PRICING = {
-	'Tier 1': {
+// Keep pricing and tiers up to date from here - https://cloud.google.com/run/pricing
+export type Tier = 'Tier_1' | 'Tier_2';
+
+type PricingData = {
+	VCPU_SECOND: number;
+	VCPU_FREE_HOURS: number;
+	GIB_SECOND: number;
+	GIB_FREE_HOURS: number;
+};
+
+type Pricing = {
+	[key in Tier]: PricingData;
+};
+
+export const pricing: Pricing = {
+	Tier_1: {
 		VCPU_SECOND: 0.000024,
 		VCPU_FREE_HOURS: 50,
 		GIB_SECOND: 0.0000025,
 		GIB_FREE_HOURS: 100,
 	},
-	'Tier 2': {
+	Tier_2: {
 		VCPU_SECOND: 0.0000336,
 		VCPU_FREE_HOURS: 35,
 		GIB_SECOND: 0.0000035,
