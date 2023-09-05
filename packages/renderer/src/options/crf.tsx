@@ -2,8 +2,8 @@ import {AnyRemotionOption} from './option';
 
 export const crfOption = {
 	name: 'CRF',
-	cliFlag: '--crf',
-	description: (
+	cliFlag: 'crf',
+	description: () => (
 		<>
 			No matter which codec you end up using, there&apos;s always a tradeoff
 			between file size and video quality. You can control it by setting the CRF

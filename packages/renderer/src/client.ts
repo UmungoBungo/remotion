@@ -16,6 +16,7 @@ import {
 } from './get-extension-from-codec';
 import {isAudioCodec} from './is-audio-codec';
 import {audioBitrateOption} from './options/audio-bitrate';
+import {colorSpaceOption, validColorSpaces} from './options/color-space';
 import {crfOption} from './options/crf';
 import {enforceAudioOption} from './options/enforce-audio';
 import {jpegQualityOption} from './options/jpeg-quality';
@@ -25,6 +26,7 @@ import {optionsMap} from './options/options-map';
 import {scaleOption} from './options/scale';
 import {videoBitrate} from './options/video-bitrate';
 import {videoCodecOption} from './options/video-codec';
+import {webhookCustomDataOption} from './options/webhook-custom-data';
 import {DEFAULT_PIXEL_FORMAT, validPixelFormats} from './pixel-format';
 import {proResProfileOptions} from './prores-profile';
 import {validateOutputFilename} from './validate-output-filename';
@@ -56,7 +58,10 @@ export const BrowserSafeApis = {
 		muteOption,
 		videoCodecOption,
 		offthreadVideoCacheSizeInBytesOption,
+		webhookCustomDataOption,
+		colorSpaceOption,
 	},
+	validColorSpaces,
 	optionsMap,
 	codecSupportsCrf,
 	codecSupportsVideoBitrate,

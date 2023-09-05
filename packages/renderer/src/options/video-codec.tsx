@@ -2,8 +2,8 @@ import {AnyRemotionOption} from './option';
 
 export const videoCodecOption = {
 	name: 'Codec',
-	cliFlag: '--codec',
-	description: (
+	cliFlag: 'codec',
+	description: () => (
 		<>
 			H264 works well in most cases, but sometimes it&apos;s worth going for a
 			different codec. WebM achieves higher compression but is slower to render.

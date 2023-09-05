@@ -2,14 +2,17 @@ import type {
 	AudioCodec,
 	ChromiumOptions,
 	Codec,
+	ColorSpace,
 	FrameRange,
 	LogLevel,
 	PixelFormat,
 	ProResProfile,
 	StillImageFormat,
+	ToOptions,
 	VideoImageFormat,
 	X264Preset,
 } from '@remotion/renderer';
+import type {BrowserSafeApis} from '@remotion/renderer/client';
 import type {VideoConfig} from 'remotion';
 import type {ChunkRetry} from '../functions/helpers/get-retry-stats';
 import type {EnhancedErrorInfo} from '../functions/helpers/write-lambda-error';
@@ -207,10 +210,19 @@ export enum LambdaRoutines {
 	compositions = 'compositions',
 }
 
-type WebhookOption = null | {
-	url: string;
-	secret: string | null;
-};
+type Prettify<T> = {
+	[K in keyof T]: T[K];
+} & {};
+
+export type WebhookOption = Prettify<
+	| null
+	| ({
+			url: string;
+			secret: string | null;
+	  } & Partial<
+			ToOptions<[typeof BrowserSafeApis.options.webhookCustomDataOption]>
+	  >)
+>;
 
 export type SerializedInputProps =
 	| {
@@ -260,6 +272,7 @@ export type LambdaStartPayload = {
 	forceWidth: number | null;
 	bucketName: string | null;
 	offthreadVideoCacheSizeInBytes: number | null;
+	colorSpace: ColorSpace;
 };
 
 export type LambdaStatusPayload = {
@@ -313,6 +326,7 @@ export type LambdaPayloads = {
 		forceHeight: number | null;
 		forceWidth: number | null;
 		offthreadVideoCacheSizeInBytes: number | null;
+		colorSpace: ColorSpace;
 	};
 	status: LambdaStatusPayload;
 	renderer: {
@@ -353,6 +367,7 @@ export type LambdaPayloads = {
 			version: string;
 		};
 		offthreadVideoCacheSizeInBytes: number | null;
+		colorSpace: ColorSpace;
 	};
 	still: {
 		type: LambdaRoutines.still;

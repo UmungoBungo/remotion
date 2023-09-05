@@ -10,6 +10,7 @@ import {validateDownloadBehavior} from '../shared/validate-download-behavior';
 import {validateFramesPerLambda} from '../shared/validate-frames-per-lambda';
 import {validateLambdaCodec} from '../shared/validate-lambda-codec';
 import {validateServeUrl} from '../shared/validate-serveurl';
+import {validateWebhook} from '../shared/validate-webhook';
 import type {GetRenderProgressInput} from './get-render-progress';
 import type {RenderMediaOnLambdaInput} from './render-media-on-lambda';
 
@@ -52,6 +53,7 @@ export const makeLambdaRenderMediaPayload = async ({
 	jpegQuality,
 	quality,
 	offthreadVideoCacheSizeInBytes,
+	colorSpace,
 }: RenderMediaOnLambdaInput): Promise<LambdaStartPayload> => {
 	if (quality) {
 		throw new Error(
@@ -66,6 +68,7 @@ export const makeLambdaRenderMediaPayload = async ({
 		durationInFrames: 1,
 	});
 	validateDownloadBehavior(downloadBehavior);
+	validateWebhook(webhook);
 
 	const stringifiedInputProps = serializeOrThrow(
 		inputProps ?? {},
@@ -119,6 +122,7 @@ export const makeLambdaRenderMediaPayload = async ({
 		audioCodec: audioCodec ?? null,
 		type: LambdaRoutines.start,
 		offthreadVideoCacheSizeInBytes: offthreadVideoCacheSizeInBytes ?? null,
+		colorSpace: colorSpace ?? 'default',
 	};
 };
 

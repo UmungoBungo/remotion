@@ -315,6 +315,10 @@ import { RenderMediaOnLambdaInput } from "@remotion/lambda";
 const webhook: RenderMediaOnLambdaInput["webhook"] = {
   url: "https://mapsnap.app/api/webhook",
   secret: process.env.WEBHOOK_SECRET as string,
+  // Optionally pass up to 1024 bytes of custom data
+  customData: {
+    id: 42,
+  },
 };
 ```
 
@@ -348,6 +352,10 @@ If the `logLevel` is set to `verbose`, the Lambda function will not clean up art
 ### `offthreadVideoCacheSizeInBytes?`<AvailableFrom v="4.0.23"/>
 
 <Options id="offthreadvideo-cache-size-in-bytes" />
+
+### `colorSpace?`<AvailableFrom v="4.0.28"/>
+
+<Options id="color-space" />
 
 ### ~~`dumpBrowserLogs?`~~
 

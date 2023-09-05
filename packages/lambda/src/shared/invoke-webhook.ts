@@ -47,6 +47,7 @@ export type WebhookPayload = {
 	renderId: string;
 	expectedBucketOwner: string;
 	bucketName: string;
+	customData: Record<string, unknown> | null;
 } & DynamicWebhookPayload;
 
 const getWebhookClient = (url: string) => {
@@ -107,13 +108,17 @@ function invokeWebhookRaw({
 			},
 		);
 
-		req.write(jsonPayload);
+		req.write(jsonPayload, (err) => {
+			if (err) {
+				reject(err);
+			} else {
+				req.end();
+			}
+		});
 
 		req.on('error', (err) => {
 			reject(err);
 		});
-
-		req.end();
 	});
 }
 

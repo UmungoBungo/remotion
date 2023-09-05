@@ -37,6 +37,7 @@ import {getLogLevel, Log} from './logger';
 import type {CancelSignal} from './make-cancel-signal';
 import {cancelErrorMessages, makeCancelSignal} from './make-cancel-signal';
 import type {ChromiumOptions} from './open-browser';
+import type {ColorSpace} from './options/color-space';
 import type {ToOptions} from './options/option';
 import type {optionsMap} from './options/options-map';
 import {DEFAULT_OVERWRITE} from './overwrite';
@@ -55,6 +56,7 @@ import {validateSelectedCodecAndProResCombination} from './prores-profile';
 import {internalRenderFrames} from './render-frames';
 import {internalStitchFramesToVideo} from './stitch-frames-to-video';
 import type {OnStartData} from './types';
+import {validateFps} from './validate';
 import {validateEvenDimensionsWithCodec} from './validate-even-dimensions-with-codec';
 import {validateEveryNthFrame} from './validate-every-nth-frame';
 import {validateFfmpegOverride} from './validate-ffmpeg-override';
@@ -62,6 +64,7 @@ import {validateNumberOfGifLoops} from './validate-number-of-gif-loops';
 import {validateOutputFilename} from './validate-output-filename';
 import {validateScale} from './validate-scale';
 import {validateBitrate} from './validate-videobitrate';
+import {wrapWithErrorHandling} from './wrap-with-error-handling';
 import type {X264Preset} from './x264-preset';
 import {validateSelectedCodecAndPresetCombination} from './x264-preset';
 
@@ -122,6 +125,7 @@ export type InternalRenderMediaOptions = {
 	audioCodec: AudioCodec | null;
 	serveUrl: string;
 	concurrency: number | string | null;
+	colorSpace: ColorSpace;
 } & ToOptions<typeof optionsMap.renderMedia>;
 
 export type RenderMediaOptions = {
@@ -175,6 +179,7 @@ export type RenderMediaOptions = {
 	concurrency?: number | string | null;
 	logLevel?: LogLevel;
 	offthreadVideoCacheSizeInBytes?: number | null;
+	colorSpace?: ColorSpace;
 };
 
 type Await<T> = T extends PromiseLike<infer U> ? U : T;
@@ -184,7 +189,7 @@ type RenderMediaResult = {
 	slowestFrames: SlowFrame[];
 };
 
-export const internalRenderMedia = ({
+const internalRenderMediaRaw = ({
 	proResProfile,
 	x264Preset,
 	crf,
@@ -227,6 +232,7 @@ export const internalRenderMedia = ({
 	logLevel,
 	serializedResolvedPropsWithCustomSchema,
 	offthreadVideoCacheSizeInBytes,
+	colorSpace,
 }: InternalRenderMediaOptions): Promise<RenderMediaResult> => {
 	validateJpegQuality(jpegQuality);
 	validateQualitySettings({crf, codec, videoBitrate});
@@ -401,7 +407,8 @@ export const internalRenderMedia = ({
 		ensureFramesInOrder(realFrameRange);
 
 	const fps = composition.fps / everyNthFrame;
-	Internals.validateFps(fps, 'in "renderMedia()"', codec === 'gif');
+
+	validateFps(fps, 'in "renderMedia()"', codec === 'gif');
 
 	const createPrestitcherIfNecessary = () => {
 		if (preEncodedFileLocation) {
@@ -424,6 +431,8 @@ export const internalRenderMedia = ({
 				ffmpegOverride: ffmpegOverride ?? (({args}) => args),
 				videoBitrate,
 				indent,
+				x264Preset: x264Preset ?? null,
+				colorSpace,
 			});
 			stitcherFfmpeg = preStitcher.task;
 		}
@@ -582,8 +591,13 @@ export const internalRenderMedia = ({
 			})
 			.then(([{assetsInfo}]) => {
 				renderedDoneIn = Date.now() - renderStart;
-				callUpdate();
 
+				callUpdate();
+				Log.verboseAdvanced(
+					{indent, logLevel},
+					'Rendering frames done in',
+					renderedDoneIn + 'ms',
+				);
 				if (absoluteOutputLocation) {
 					ensureOutputDirectory(absoluteOutputLocation);
 				}
@@ -627,6 +641,7 @@ export const internalRenderMedia = ({
 						videoBitrate,
 						audioCodec,
 						x264Preset: x264Preset ?? null,
+						colorSpace,
 					}),
 					stitchStart,
 				]);
@@ -635,6 +650,11 @@ export const internalRenderMedia = ({
 				encodedFrames = getFramesToRender(realFrameRange, everyNthFrame).length;
 				encodedDoneIn = Date.now() - stitchStart;
 				callUpdate();
+				Log.verboseAdvanced(
+					{indent, logLevel},
+					'Stitching done in',
+					encodedDoneIn + 'ms',
+				);
 				slowestFrames.sort((a, b) => b.time - a.time);
 				const result: RenderMediaResult = {
 					buffer,
@@ -693,6 +713,10 @@ export const internalRenderMedia = ({
 	]);
 };
 
+export const internalRenderMedia = wrapWithErrorHandling(
+	internalRenderMediaRaw,
+);
+
 /**
  *
  * @description Render a video from a composition
@@ -740,6 +764,7 @@ export const renderMedia = ({
 	quality,
 	logLevel,
 	offthreadVideoCacheSizeInBytes,
+	colorSpace,
 }: RenderMediaOptions): Promise<RenderMediaResult> => {
 	if (quality !== undefined) {
 		console.warn(
@@ -799,5 +824,6 @@ export const renderMedia = ({
 			data: composition.props ?? {},
 		}).serializedString,
 		offthreadVideoCacheSizeInBytes: offthreadVideoCacheSizeInBytes ?? null,
+		colorSpace: colorSpace ?? 'default',
 	});
 };

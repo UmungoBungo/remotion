@@ -1,7 +1,8 @@
 import React, {forwardRef, useCallback, useContext} from 'react';
 import {getAbsoluteSrc} from '../absolute-src.js';
+import {calculateLoopDuration} from '../calculate-loop.js';
 import {cancelRender} from '../cancel-render.js';
-import {useRemotionEnvironment} from '../get-environment.js';
+import {getRemotionEnvironment} from '../get-remotion-environment.js';
 import {Loop} from '../loop/index.js';
 import {Sequence} from '../Sequence.js';
 import {useVideoConfig} from '../use-video-config.js';
@@ -21,7 +22,7 @@ const AudioRefForwardingFunction: React.ForwardRefRenderFunction<
 	const {startFrom, endAt, ...otherProps} = props;
 	const {loop, ...propsOtherThanLoop} = props;
 	const {fps} = useVideoConfig();
-	const environment = useRemotionEnvironment();
+	const environment = getRemotionEnvironment();
 
 	const {durations, setDurations} = useContext(DurationsContext);
 
@@ -38,7 +39,7 @@ const AudioRefForwardingFunction: React.ForwardRefRenderFunction<
 			console.log(e.currentTarget.error);
 
 			// If there is no `loop` property, we don't need to get the duration
-			// and thsi does not need to be a fatal error
+			// and this does not need to be a fatal error
 			const errMessage = `Could not play audio with src ${otherProps.src}: ${e.currentTarget.error}. See https://remotion.dev/docs/media-playback-error for help.`;
 
 			if (loop) {
@@ -59,16 +60,18 @@ const AudioRefForwardingFunction: React.ForwardRefRenderFunction<
 
 	if (loop && props.src && durations[getAbsoluteSrc(props.src)] !== undefined) {
 		const duration = Math.floor(durations[getAbsoluteSrc(props.src)] * fps);
-		const playbackRate = props.playbackRate ?? 1;
-		const actualDuration = duration / playbackRate;
 
 		return (
-			<Loop layout="none" durationInFrames={Math.floor(actualDuration)}>
-				<Audio
-					_remotionInternalNeedsDurationCalculation
-					{...propsOtherThanLoop}
-					ref={ref}
-				/>
+			<Loop
+				layout="none"
+				durationInFrames={calculateLoopDuration({
+					endAt,
+					mediaDuration: duration,
+					playbackRate: props.playbackRate ?? 1,
+					startFrom,
+				})}
+			>
+				<Audio {...propsOtherThanLoop} ref={ref} />
 			</Loop>
 		);
 	}
@@ -85,20 +88,25 @@ const AudioRefForwardingFunction: React.ForwardRefRenderFunction<
 				showInTimeline={false}
 				durationInFrames={endAtFrameNo}
 			>
-				<Audio {...otherProps} ref={ref} />
+				<Audio
+					_remotionInternalNeedsDurationCalculation={Boolean(loop)}
+					{...otherProps}
+					ref={ref}
+				/>
 			</Sequence>
 		);
 	}
 
 	validateMediaProps(props, 'Audio');
 
-	if (environment === 'rendering') {
+	if (environment.isRendering) {
 		return (
 			<AudioForRendering
 				onDuration={onDuration}
 				{...props}
 				ref={ref}
 				onError={onError}
+				_remotionInternalNeedsDurationCalculation={Boolean(loop)}
 			/>
 		);
 	}
@@ -112,6 +120,7 @@ const AudioRefForwardingFunction: React.ForwardRefRenderFunction<
 			ref={ref}
 			onError={onError}
 			onDuration={onDuration}
+			_remotionInternalNeedsDurationCalculation={Boolean(loop)}
 		/>
 	);
 };
