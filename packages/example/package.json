@@ -23,7 +23,8 @@
 		"render-gif": "remotion render framer out/video.gif --codec=gif --every-nth-frame=2",
 		"render-transparent": "remotion render --image-format=png --pixel-format=yuva420p --codec=vp8 react-svg out/video.webm",
 		"render-swangle": "remotion render GpuTesting out/swangle.mp4 --gl=swangle",
-		"render-angle": "remotion render GpuTesting out/angle.mp4 --gl=angle"
+		"render-angle": "remotion render GpuTesting out/angle.mp4 --gl=angle",
+		"render-orb": "remotion render Orb out/angle.mp4 "
 	},
 	"dependencies": {
 		"@mdx-js/loader": "^2.3.0",
@@ -56,7 +57,7 @@
 		"@types/react": "18.0.26",
 		"@types/styled-components": "^5.1.26",
 		"@types/web": "0.0.78",
-		"@types/three": "^0.144.0",
+		"@types/three": "0.154.0",
 		"babel-loader": "^8.2.2",
 		"dotenv": "9.0.2",
 		"lottie-web": "5.12.2",
@@ -72,7 +73,7 @@
 		"use-asset": "^1.0.4",
 		"vitest": "0.31.1",
 		"zod": "^3.22.3",
-		"three": "^0.145.0"
+		"three": "0.154.0"
 	},
 	"devDependencies": {
 		"eslint": "8.42.0",

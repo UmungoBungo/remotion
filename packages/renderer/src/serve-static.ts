@@ -70,20 +70,12 @@ export const serveStatic = async (
 	let selectedPort: number | null = null;
 
 	const maxTries = 5;
-
-	// Default Node.js host, but explicity
-	const host = '0.0.0.0';
 	for (let i = 0; i < maxTries; i++) {
 		try {
 			selectedPort = await new Promise<number>((resolve, reject) => {
-				getDesiredPort({
-					desiredPort: options?.port ?? undefined,
-					from: 3000,
-					to: 3100,
-					hostsToTry: ['0.0.0.0', '127.0.0.1'],
-				})
+				getDesiredPort(options?.port ?? undefined, 3000, 3100)
 					.then(({port, didUsePort}) => {
-						server.listen({port, host});
+						server.listen(port);
 						server.on('listening', () => {
 							resolve(port);
 							return didUsePort();

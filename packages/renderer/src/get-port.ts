@@ -1,18 +1,11 @@
 import net from 'net';
 import {createLock} from './locks';
 
-type PortStatus = 'available' | 'unavailable';
+const getAvailablePort = (portToTry: number) =>
+	new Promise<'available' | 'unavailable'>((resolve) => {
+		let status: 'available' | 'unavailable' = 'unavailable';
 
-const isPortAvailableOnHost = ({
-	portToTry,
-	host,
-}: {
-	portToTry: number;
-	host: string;
-}): Promise<PortStatus> => {
-	return new Promise<PortStatus>((resolve) => {
-		let status: PortStatus = 'unavailable';
-
+		const host = '127.0.0.1';
 		const socket = new net.Socket();
 
 		socket.on('connect', () => {
@@ -35,42 +28,12 @@ const isPortAvailableOnHost = ({
 
 		socket.connect(portToTry, host);
 	});
-};
 
-export const testPortAvailableOnMultipleHosts = async ({
-	hosts,
-	port,
-}: {
-	port: number;
-	hosts: string[];
-}): Promise<PortStatus> => {
-	const results = await Promise.all(
-		hosts.map((host) => {
-			return isPortAvailableOnHost({portToTry: port, host});
-		}),
-	);
-
-	return results.every((r) => r === 'available') ? 'available' : 'unavailable';
-};
-
-const getPort = async ({
-	from,
-	to,
-	hostsToTest,
-}: {
-	from: number;
-	to: number;
-	hostsToTest: string[];
-}) => {
+const getPort = async (from: number, to: number) => {
 	const ports = makeRange(from, to);
 
 	for (const port of ports) {
-		if (
-			(await testPortAvailableOnMultipleHosts({
-				port,
-				hosts: hostsToTest,
-			})) === 'available'
-		) {
+		if ((await getAvailablePort(port)) === 'available') {
 			return port;
 		}
 	}
@@ -80,31 +43,22 @@ const getPort = async ({
 
 const portLocks = createLock({timeout: 10000});
 
-export const getDesiredPort = async ({
-	desiredPort,
-	from,
-	hostsToTry,
-	to,
-}: {
-	desiredPort: number | undefined;
-	from: number;
-	to: number;
-	hostsToTry: string[];
-}) => {
+export const getDesiredPort = async (
+	desiredPort: number | undefined,
+	from: number,
+	to: number,
+) => {
 	await portLocks.waitForAllToBeDone();
 	const lockPortSelection = portLocks.lock();
 	const didUsePort = () => portLocks.unlock(lockPortSelection);
 	if (
 		typeof desiredPort !== 'undefined' &&
-		(await testPortAvailableOnMultipleHosts({
-			port: desiredPort,
-			hosts: ['0.0.0.0', '127.0.0.1'],
-		})) === 'available'
+		(await getAvailablePort(desiredPort)) === 'available'
 	) {
 		return {port: desiredPort, didUsePort};
 	}
 
-	const actualPort = await getPort({from, to, hostsToTest: hostsToTry});
+	const actualPort = await getPort(from, to);
 
 	// If did specify a port but did not get that one, fail hard.
 	if (desiredPort && desiredPort !== actualPort) {
