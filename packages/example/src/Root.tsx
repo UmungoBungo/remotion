@@ -47,6 +47,7 @@ import {StaticDemo} from './StaticServer';
 import {StillZoom} from './StillZoom';
 import {TenFrameTester} from './TenFrameTester';
 import ThreeBasic from './ThreeBasic';
+import {GpuTesting} from './GpuTesting';
 import {VideoOnCanvas} from './VideoOnCanvas';
 import {Greenscreen} from './VideoOnCanvas/greenscreen';
 import {VideoSpeed} from './VideoSpeed';
@@ -722,6 +723,14 @@ export const Index: React.FC = () => {
 					height={720}
 					fps={30}
 					durationInFrames={600}
+				/>
+				<Composition
+					id="GpuTesting"
+					component={GpuTesting}
+					durationInFrames={420}
+					fps={30}
+					width={1280}
+					height={720}
 				/>
 			</Folder>
 			<Folder name="lottie">

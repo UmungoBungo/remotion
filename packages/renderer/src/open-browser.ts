@@ -50,6 +50,11 @@ const getOpenGlRenderer = (option?: OpenGlRenderer | null): string[] => {
 		];
 	}
 
+	if (renderer === 'angle') {
+		console.log('altered cmd');
+		return [`--use-gl=angle`, `--use-angle=gl-egl`];
+	}
+
 	if (renderer === null) {
 		return [];
 	}
