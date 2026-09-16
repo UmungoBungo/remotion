@@ -145,6 +145,7 @@ async function internalRenderStillOnWeb<
 
 	const {
 		delayRenderScope,
+		onRenderReady,
 		div,
 		collectAssets,
 		errorHolder,
@@ -180,6 +181,7 @@ async function internalRenderStillOnWeb<
 		await waitForReady({
 			timeoutInMilliseconds: delayRenderTimeoutInMilliseconds,
 			scope: delayRenderScope,
+			onRenderReady,
 			signal,
 			apiName: 'renderStillOnWeb',
 			internalState: null,

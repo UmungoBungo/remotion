@@ -348,6 +348,7 @@ const internalRenderMediaOnWeb = async <
 
 	const {
 		delayRenderScope,
+		onRenderReady,
 		div,
 		timeUpdater,
 		collectAssets,
@@ -407,6 +408,7 @@ const internalRenderMediaOnWeb = async <
 		await waitForReady({
 			timeoutInMilliseconds: delayRenderTimeoutInMilliseconds,
 			scope: delayRenderScope,
+			onRenderReady,
 			signal,
 			apiName: 'renderMediaOnWeb',
 			internalState,

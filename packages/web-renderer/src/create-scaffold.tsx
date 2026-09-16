@@ -4,6 +4,8 @@ import ReactDOM from 'react-dom/client';
 import type {Codec, DelayRenderScope, LogLevel, TRenderAsset} from 'remotion';
 import {Internals} from 'remotion';
 import type {$ZodObject} from 'zod/v4/core';
+import type {OnRenderReady} from './delay-render-scope';
+import {createDelayRenderScope} from './delay-render-scope';
 import type {HtmlInCanvasContext} from './html-in-canvas';
 import {
 	containsLayoutSubtreeCanvas,
@@ -164,6 +166,7 @@ export function createScaffold<Props extends Record<string, unknown>>({
 	sampleRate: number | null;
 }): {
 	delayRenderScope: DelayRenderScope;
+	onRenderReady: OnRenderReady;
 	div: HTMLDivElement;
 	timeUpdater: React.RefObject<TimeUpdaterRef | null>;
 	collectAssets: React.RefObject<{
@@ -241,13 +244,9 @@ export function createScaffold<Props extends Record<string, unknown>>({
 		},
 	});
 
-	const delayRenderScope: DelayRenderScope = {
-		remotion_renderReady: true,
-		remotion_delayRenderTimeouts: {},
-		remotion_puppeteerTimeout: delayRenderTimeoutInMilliseconds,
-		remotion_attempt: 0,
-		remotion_delayRenderHandles: [],
-	};
+	const {scope: delayRenderScope, onRenderReady} = createDelayRenderScope({
+		delayRenderTimeoutInMilliseconds,
+	});
 
 	const timeUpdater = createRef<TimeUpdaterRef | null>();
 
@@ -346,6 +345,7 @@ export function createScaffold<Props extends Record<string, unknown>>({
 
 	return {
 		delayRenderScope,
+		onRenderReady,
 		div,
 		errorHolder,
 		htmlInCanvasContext,
